@@ -4,8 +4,8 @@ require 'metriks/reporter/graphite'
 require 'metriks/reporter/logger'
 
 module Fluent
-  class SpheroOutput < Output
-    Fluent::Plugin.register_output("sphero", self)
+  class DeisGraphiteOutput < Output
+    Fluent::Plugin.register_output("deis-graphite", self)
 
     @reporter = nil
     @logging_reporter = nil
