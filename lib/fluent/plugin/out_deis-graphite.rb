@@ -2,18 +2,31 @@ require 'fluent/output'
 require 'metriks'
 require 'metriks/reporter/graphite'
 require 'metriks/reporter/logger'
+require 'rest_client'
 
 module Fluent
   class DeisGraphiteOutput < Output
     Fluent::Plugin.register_output("deis-graphite", self)
 
     @reporter = nil
-    @logging_reporter = nil
+    @cluster_name="unknown_cluster"
     config_param :graphite_url, :string, :default => ''
     config_param :graphite_port, :integer, :default => 2003
     config_param :graphite_interval, :integer, :default => 10
 
     def initialize
+
+      #Get the cluster name from Google metadata service
+      begin
+        response = RestClient::Request.execute(method: :get, url: 'http://metadata.google.internal/computeMetadata/v1/instance/attributes/cluster-name',
+                            timeout: 10, headers: { "Metadata-Flavor" => "Google"})
+        if response.code == 200
+          @cluster_name=response.body
+        end
+      rescue
+        p "Couldn't determine cluster name."
+      end
+
       super
     end
 
@@ -43,7 +56,7 @@ module Fluent
             #response_time = split_message[12].strip.to_f
             #request_time = split_message[13].strip.to_f
 
-            Metriks.meter("response_rates.#{record["kubernetes"]["pod_name"]}.#{app}.#{status_code}").mark
+            Metriks.meter("response_rates.#{@cluster_name}.#{record["kubernetes"]["pod_name"]}.#{app}.#{status_code}").mark
           end
          end
       end
