@@ -49,14 +49,18 @@ module Fluent
       es.each do |time,record|
         if record.key? "kubernetes"
           if record["kubernetes"]["container_name"] == "deis-router"
-            split_message = record["log"].split(" - ")
-            app = split_message[1].strip
-            status_code = split_message[4].strip
-            #bytes_sent = split_message[6].strip.to_f
-            #response_time = split_message[12].strip.to_f
-            #request_time = split_message[13].strip.to_f
+            begin
+              split_message = record["log"].split(" - ")
+              app = split_message[1].strip
+              status_code = split_message[4].strip
+              #bytes_sent = split_message[6].strip.to_f
+              #response_time = split_message[12].strip.to_f
+              #request_time = split_message[13].strip.to_f
 
-            Metriks.meter("response_rates.#{@cluster_name}.#{record["kubernetes"]["pod_name"]}.#{app}.#{status_code}").mark
+              Metriks.meter("response_rates.#{@cluster_name}.#{record["kubernetes"]["pod_name"]}.#{app}.#{status_code}").mark
+            rescue Exception => e
+              puts "Failed to parse: \'#{record}\'. Got exception #{e}"
+            end
           end
          end
       end
